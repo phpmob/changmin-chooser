@@ -81,6 +81,12 @@ window.ChangMinChooser = function (selector, scope) {
             options.render.item = window[options.render.item];
         }
 
+        // disable typing for filter
+        if (options.filter_disabled) {
+            options.score = function() { return function() { return 1; }; }; //https://stackoverflow.com/a/35920145
+            delete options.filter_disabled;
+        }
+
         // vary short config
         if (options.url) {
             options.remote = {
@@ -152,8 +158,16 @@ window.ChangMinChooser = function (selector, scope) {
                     opt.text = 'name';
                 }
 
+                if (typeof options.labelTextField === 'string') {
+                    opt.text = options.labelTextField;
+                }
+
                 if (typeof opt.clearOnLoad === 'undefined') {
                     opt.clearOnLoad = true;
+                }
+
+                if (me.$wrapper.hasClass('multi')) {
+                    opt.clearOnLoad = false;
                 }
 
                 if (opt.clearOnLoad) {
@@ -189,13 +203,7 @@ window.ChangMinChooser = function (selector, scope) {
                             });
                         });
 
-                        callback(items);
-
-                        // fix it's not open after loaded
-                        setTimeout(function () {
-                            me.blur();
-                            me.focus();
-                        }, 1);
+                        return callback(items);
                     }
                 });
             };
@@ -247,6 +255,36 @@ window.ChangMinChooser = function (selector, scope) {
             var s = this;
             this.revertSettings.$children.each(function () {
                 $.extend(s.options[this.value], $(this).data());
+            });
+
+            var vals = s.$input.val();
+
+            if (!vals || !remote) {
+                return;
+            }
+
+            s.load(function (callback) {
+                var criteria = {};
+                criteria[remote.value] = {
+                    type: 'in',
+                    value: vals
+                };
+
+                this.__remote__ = remote;
+                this.__remote__.data = {
+                    criteria: criteria
+                };
+
+                var m = this;
+                m.clearOptions();
+
+                return loader.call(this, function (items) {
+                    callback(items);
+
+                    for (var i in items) {
+                        m.addItem(items[i].value);
+                    }
+                });
             });
         };
 
