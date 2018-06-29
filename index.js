@@ -202,6 +202,9 @@ window.ChangMinChooser = function (selector, scope) {
                                 item: it
                             });
                         });
+                        
+                        // fix it's not open after loaded
+                        setTimeout(function () { me.blur(); me.focus(); }, 1);
 
                         return callback(items);
                     }
